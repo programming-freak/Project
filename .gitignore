@@ -1,12 +1,12 @@
 venv/
 __pycache__/
 
-data/
-dataset/
+*.pyc
 
-*.pth
 *.mp4
-*.jpg
-*.png
+*.pth
 
-temp*
+heatmap.jpg
+
+dataset/
+data/videos/

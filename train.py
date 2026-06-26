@@ -78,13 +78,13 @@ optimizer=torch.optim.Adam(
 
     model.parameters(),
 
-    lr=1e-5
+    lr=3e-5
 
 )
 
 
 
-epochs=10
+epochs=15
 
 
 

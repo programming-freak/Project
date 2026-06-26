@@ -6,6 +6,8 @@ from models.full_model import DeepfakeDetector
 from video_inference import extract_frames
 from face_extractor import extract_faces
 
+
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -26,8 +28,9 @@ model.load_state_dict(
 
 
 model.to(device)
-
 model.eval()
+
+
 
 # -------------------------
 # GradCAM storage
@@ -35,6 +38,8 @@ model.eval()
 
 activations = {}
 gradients = {}
+
+
 
 def forward_hook(module, inp, output):
 
@@ -48,7 +53,28 @@ def backward_hook(module, grad_in, grad_out):
 
 
 
-target_layer = model.cnn.cnn.features[7]
+# -------------------------
+# Automatically find last Conv2d
+# -------------------------
+
+target_layer = None
+
+
+for layer in model.modules():
+
+    if isinstance(
+        layer,
+        torch.nn.Conv2d
+    ):
+        target_layer = layer
+
+
+
+print(
+    "GradCAM layer:",
+    target_layer
+)
+
 
 
 target_layer.register_forward_hook(
@@ -60,12 +86,17 @@ target_layer.register_full_backward_hook(
     backward_hook
 )
 
+
+
+
+# -------------------------
+# Detect video
+# -------------------------
+
 def detect_video(video_path):
 
 
-    # -------------------------
-    # 1. Extract frames
-    # -------------------------
+    # Frames
 
     frames = extract_frames(
         video_path
@@ -79,9 +110,7 @@ def detect_video(video_path):
 
 
 
-    # -------------------------
-    # 2. Face crop
-    # -------------------------
+    # Face crop
 
     faces = extract_faces(
         frames
@@ -95,14 +124,15 @@ def detect_video(video_path):
 
 
 
-    # -------------------------
-    # 3. Model input
-    # -------------------------
+    # Model input
 
     video = faces.unsqueeze(0)
 
 
     video = video.to(device)
+
+
+    video.requires_grad = True
 
 
     print(
@@ -112,9 +142,7 @@ def detect_video(video_path):
 
 
 
-    # -------------------------
-    # 4. Prediction
-    # -------------------------
+    # Prediction
 
     output = model(video)
 
@@ -146,8 +174,9 @@ def detect_video(video_path):
 
 
     # -------------------------
-    # 5. GradCAM
+    # Backward GradCAM
     # -------------------------
+
 
     model.zero_grad()
 
@@ -165,11 +194,27 @@ def detect_video(video_path):
 
 
 
+    print(
+        "Activation:",
+        acts.shape
+    )
+
+    print(
+        "Gradient:",
+        grads.shape
+    )
+
+
+
+    # -------------------------
+    # GradCAM
+    # -------------------------
+
+
     weights = grads.mean(
         dim=(2,3),
         keepdim=True
     )
-
 
 
     cam = (
@@ -186,14 +231,11 @@ def detect_video(video_path):
 
 
 
-    # -------------------------
-    # 6. Frame importance
-    # -------------------------
+    # frame importance
 
     frame_scores = cam.mean(
         axis=(1,2)
     )
-
 
 
     important_frame = np.argmax(
@@ -211,18 +253,23 @@ def detect_video(video_path):
         "Most suspicious frame:",
         important_frame+1
     )
+
+
+
     # -------------------------
-    # Generate heatmap image
+    # Heatmap
     # -------------------------
 
 
-    cam_frame = cam[important_frame]
+    cam_frame = cam[
+        important_frame
+    ]
 
 
-    cam_frame = cam_frame - cam_frame.min()
+    cam_frame -= cam_frame.min()
 
 
-    cam_frame = cam_frame / (
+    cam_frame /= (
         cam_frame.max()+1e-8
     )
 
@@ -235,9 +282,9 @@ def detect_video(video_path):
 
 
 
-    # original face frame
-
-    img = faces[important_frame]
+    img = faces[
+        important_frame
+    ]
 
 
     img = img.permute(
@@ -254,15 +301,17 @@ def detect_video(video_path):
 
 
 
-    # apply color map
-
     heatmap = cv2.applyColorMap(
         np.uint8(cam_frame*255),
         cv2.COLORMAP_JET
     )
 
 
-    heatmap = heatmap[:,:,::-1] / 255.0
+    heatmap = (
+        heatmap[:,:,::-1]
+        /
+        255.0
+    )
 
 
 
@@ -288,9 +337,14 @@ def detect_video(video_path):
     )
 
 
+
     print(
         "Saved heatmap.jpg"
     )
+
+
+
+
 
 detect_video(
     "data/videos/249_280.mp4"

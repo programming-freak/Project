@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
+import timm
 
 
 
@@ -11,34 +11,16 @@ class CNNEncoder(nn.Module):
         super().__init__()
 
 
-        # pretrained ResNet50
-        resnet = models.resnet50(
-            weights="DEFAULT"
+        self.cnn = timm.create_model(
+            "xception",
+            pretrained=True,
+            num_classes=0
         )
 
-
-        # remove classifier
-        self.features = nn.Sequential(
-            *list(resnet.children())[:-1]
-        )
 
 
     def forward(self,x):
 
-        """
-        x:
-        batch*frames,3,224,224
-        """
+        features = self.cnn(x)
 
-
-        x = self.features(x)
-
-
-        # flatten
-        x = torch.flatten(
-            x,
-            1
-        )
-
-
-        return x
+        return features

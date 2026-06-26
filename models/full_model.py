@@ -19,13 +19,40 @@ class DeepfakeDetector(nn.Module):
         self.transformer = ISTVT()
 
 
+        self.classifier = nn.Linear(
+            2048,
+            2
+        )
+
+
 
     def forward(self,x):
 
 
+        # CNN spatial features
+
         features = self.cnn(x)
 
 
-        prediction = self.transformer(features)
+        # spatial-temporal transformer
+
+        features, attention = self.transformer(
+            features
+        )
+
+
+        # take video representation
+
+        features = features.mean(
+            dim=1
+        )
+
+
+        # real/fake prediction
+
+        prediction = self.classifier(
+            features
+        )
+
 
         return prediction

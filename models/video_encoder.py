@@ -20,25 +20,10 @@ class VideoEncoder(nn.Module):
 
     def forward(self,x):
 
-        """
-        x:
-
-        batch,
-        frames,
-        channels,
-        height,
-        width
-
-        """
-
-
         B,T,C,H,W = x.shape
 
 
-
-        # combine frames
-
-        x = x.reshape(
+        x = x.view(
             B*T,
             C,
             H,
@@ -46,16 +31,10 @@ class VideoEncoder(nn.Module):
         )
 
 
-
-        # CNN
-
         features = self.cnn(x)
 
 
-
-        # restore sequence
-
-        features = features.reshape(
+        features = features.view(
             B,
             T,
             -1
