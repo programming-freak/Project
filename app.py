@@ -1,96 +1,81 @@
+import os
+import tempfile
+
 import streamlit as st
 
-from inference import predict
+from detector import DeepfakeInference
 
 
-
-st.title(
-    "ISTVT Inspired Deepfake Detector"
+st.set_page_config(
+    page_title="ISTVT Deepfake Detector",
+    page_icon="🎥",
+    layout="centered"
 )
 
 
+@st.cache_resource
+def load_detector():
+    return DeepfakeInference()
 
-st.write(
+
+detector = load_detector()
+
+
+st.title("🎥 ISTVT Deepfake Detector")
+
+st.markdown(
+    """
+Upload a video and the ISTVT model will classify it as **REAL** or **FAKE**.
 """
-Upload a video and the model will classify it.
-"""
+)
+
+uploaded_file = st.file_uploader(
+    "Upload Video",
+    type=["mp4", "avi", "mov", "mkv"]
 )
 
 
+if uploaded_file is not None:
 
-video = st.file_uploader(
+    st.video(uploaded_file)
 
-    "Upload video",
+    if st.button("Run Detection"):
 
-    type=[
-        "mp4",
-        "avi"
-    ]
+        with st.spinner("Analyzing video..."):
 
-)
+            with tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".mp4"
+            ) as temp_file:
 
+                temp_file.write(uploaded_file.read())
 
+                temp_path = temp_file.name
 
+            result = detector.predict(temp_path)
 
-if video:
+            os.remove(temp_path)
 
+        if not result["success"]:
 
-    with open(
-        "temp.mp4",
-        "wb"
-    ) as f:
-
-        f.write(
-            video.read()
-        )
-
-
-
-    result=predict(
-        "temp.mp4"
-    )
-
-
-
-    if result=="Face not detected":
-
-        st.error(
-            "No face detected"
-        )
-
-
-
-    else:
-
-
-        label,confidence=result
-
-
-
-        if label=="FAKE":
-
-            st.error(
-                f"""
-                Prediction:
-                {label}
-
-                Confidence:
-                {confidence:.2f}
-                """
-            )
-
+            st.error(result["message"])
 
         else:
 
+            label = result["label"]
+            confidence = result["confidence"]
 
-            st.success(
+            st.subheader("Prediction")
 
-                f"""
-                Prediction:
-                {label}
+            if label == "FAKE":
 
-                Confidence:
-                {confidence:.2f}
-                """
+                st.error(f"🚨 {label}")
 
+            else:
+
+                st.success(f"✅ {label}")
+
+            st.metric(
+                "Confidence",
+                f"{confidence*100:.2f}%"
             )
