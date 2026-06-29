@@ -18,7 +18,7 @@ class DeepfakeInference:
     predict(video_path) API.
     """
 
-   def __init__(
+def __init__(
     self,
     model_path="best_model.pth",
     device=None
