@@ -18,22 +18,49 @@ class DeepfakeInference:
     predict(video_path) API.
     """
 
-    def __init__(self,
-                 model_path = "best_model.pth"
+   def __init__(
+    self,
+    model_path="best_model.pth",
+    device=None
+):
 
-                if not os.path.exists(model_path):
-                    gdown.download(
-                        "https://drive.google.com/file/d/1rO1fWKf1TFs65TkKNZXVvzwh_hm9ePeq/view?usp=sharing",
-                        model_path,
-                        quiet=False
-    )):
+    if not os.path.exists(model_path):
+        print("Downloading model...")
 
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+        gdown.download(
+            id="1rO1fWKf1TFs65TkKNZXVvzwh_hm9ePeq",
+            output=model_path,
+            quiet=False
+        )
 
-        self.device = device
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        print(f"Loading model on {self.device}...")
+    self.device = device
+
+    print(f"Loading model on {self.device}...")
+
+    self.model = DeepfakeDetector()
+
+    self.model.load_state_dict(
+        torch.load(
+            model_path,
+            map_location=self.device
+        )
+    )
+
+    self.model.to(self.device)
+    self.model.eval()
+
+    self.mtcnn = MTCNN(
+        image_size=224,
+        margin=20,
+        device=self.device
+    )
+
+    self.labels = ["REAL", "FAKE"]
+
+    print("Model loaded successfully.")
 
         ###################################
         # Load ISTVT model
