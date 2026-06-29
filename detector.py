@@ -21,7 +21,7 @@ class DeepfakeInference:
     def __init__(self,
                  model_path = "best_model.pth"
 
-                if not os.path.exists(MODEL_PATH):
+                if not os.path.exists(model_path):
                     gdown.download(
                         "https://drive.google.com/file/d/1rO1fWKf1TFs65TkKNZXVvzwh_hm9ePeq/view?usp=sharing",
                         model_path,
