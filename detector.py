@@ -61,39 +61,6 @@ class DeepfakeInference:
             self.labels = ["REAL", "FAKE"]
         
             print("Model loaded successfully.")
-        
-                ###################################
-                # Load ISTVT model
-                ###################################
-        
-                self.model = DeepfakeDetector()
-        
-                self.model.load_state_dict(
-                    torch.load(
-                        model_path,
-                        map_location=self.device
-                    )
-                )
-        
-                self.model.to(self.device)
-                self.model.eval()
-        
-                ###################################
-                # Face detector
-                ###################################
-        
-                self.mtcnn = MTCNN(
-                    image_size=224,
-                    margin=20,
-                    device=self.device
-                )
-        
-                self.labels = [
-                    "REAL",
-                    "FAKE"
-                ]
-        
-                print("Model loaded successfully.")
 
     ##########################################################
 
