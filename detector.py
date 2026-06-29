@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import torch
+import os
+import gdown
 
 from PIL import Image
 from facenet_pytorch import MTCNN
@@ -17,8 +19,14 @@ class DeepfakeInference:
     """
 
     def __init__(self,
-                 model_path="deepfake_detector.pth",
-                 device=None):
+                 model_path = "best_model.pth"
+
+                if not os.path.exists(MODEL_PATH):
+                    gdown.download(
+                        "https://drive.google.com/file/d/1rO1fWKf1TFs65TkKNZXVvzwh_hm9ePeq/view?usp=sharing",
+                        model_path,
+                        quiet=False
+    )):
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
